@@ -1,3 +1,6 @@
+![Python](https://img.shields.io/badge/Python-3.8+-blue)
+![License](https://img.shields.io/badge/License-MIT-green)
+
 # 🧹 Disk Sanitizer
 
 A Python utility that scans directories to automatically remove **empty files** and **duplicate files** while generating detailed log files. The project also includes a scheduled version that can periodically scan a directory without user intervention.
