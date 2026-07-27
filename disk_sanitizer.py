@@ -1,235 +1,270 @@
-"""
-Disk Sanitizer
-
-Deletes:
-• Empty files
-• Duplicate files
-
-Uses:
-• Recursive directory traversal
-• MD5 checksum
-• Size-based optimization
-
-Author: Yash Sachin Satarkar
-"""
-
-#############################################################################################
-#
-#     Importing required Libraries 
-#
-#############################################################################################
-
 import sys
-import os
 import time
-import hashlib
+import schedule
+
+import validator
+import logger
+import file_utils
+import mail_sender
 
 #############################################################################################
 #
-#     Function name: empty_files_scanner
-#     Input: Name of Directory
-#     Description: Deletes all empty files periodically 
-#     Date: 21/07/2026
-#     Author: Yash Sachin Satarkar
+# Function Name : display_help
+# Description   : Displays help information for the script.
 #
 #############################################################################################
 
-def empty_files_scanner(directory_path):
-  border = "-"*40
-  timestamp = time.ctime
-  log_file_name = "Empty_File %s.log"%timestamp()
-  log_file_name = log_file_name.replace(" ", "_")
-  log_file_name = log_file_name.replace(":", "_")
-   
+def display_help():
 
-  if not os.path.exists(directory_path):
-    print("Disk Sanitizer Error: There is no such directory with name: ",directory_path)
-    return
-  
-  
-
-  if not os.path.isdir(directory_path):
-    print("Disk Sanitizer error: It is not a directory with name: ",directory_path)
-    return
-
-  with open(log_file_name, "w") as lfobj:
-
-    lfobj.write(border + "\n")
-    lfobj.write("Disk Sanitizer Script \n")
-    lfobj.write(border + "\n\n")
-
-    lfobj.write("Files from the directory are: \n\n")
-    lfobj.write(border + "\n")
-
-    total_files = 0
-    empty_files = 0
-
-    for folder_name, sub_folder, file_name in os.walk(directory_path):
-        
-      for fname in file_name:
-        total_files += 1
-        fname = os.path.join(folder_name,fname)
-
-        lfobj.write(fname + ":" + str(os.path.getsize(fname)) + "bytes" + "\n")
-
-        if os.path.getsize(fname) == 0:
-          try: 
-            os.remove(fname)
-            empty_files += 1
-            print("Empty file deleted: ", fname)         
-          except Exception as e:
-            print(f"Unable to delete {fname} : {e} ")
-
-    lfobj.write(border + "\n")
-    lfobj.write("Total files scanned: "+str(total_files)+"\n")
-    lfobj.write("total empty files found and deleted: "+str(empty_files)+"\n")
-    lfobj.write(border + "\n")
+    print("This script scans a directory, identifies duplicate files using checksums,")
+    print("deletes duplicate files, creates a log file, and sends the log file through email.")
+    print()
+    print("Usage:")
+    print("python duplicate_file_removal.py <AbsoluteDirectoryPath> <TimeIntervalInMinutes> <ReceiverEmailAddress>")
+    print()
+    print("Example:")
+    print("python duplicate_file_removal.py /home/yash/Demo 30 abc@example.com")
 
 
 #############################################################################################
 #
-#     Function name: calculate_checksum
-#     Input: name of the file of which you want to calculate checksum
-#     Description: inputs file,  calcuates checksum and returns it
-#     Date: 21/07/2026
-#     Author: Yash Sachin Satarkar
+# Function Name : display_usage
+# Description   : Displays the correct command-line usage.
 #
 #############################################################################################
 
-def calculate_checksum(filename):
-  
-  with open(filename, "rb") as file:
+def display_usage():
 
-    hobj = hashlib.md5()
-
-    buffer = file.read(4096)
-
-    while len(buffer) > 0:
-      hobj.update(buffer)
-      buffer = file.read(4096)
-
-    return hobj.hexdigest()
-
-#############################################################################################
-#
-#     Function name: duplicate_files_scanner
-#     Input: Name of Directory
-#     Description: Deletes all duplicate files periodically 
-#     Date: 21/07/2026
-#     Author: Yash Sachin Satarkar
-#
-#############################################################################################
-
-def duplicate_files_scanner(directory_path):
-  border = "-"*40
-  timestamp = time.ctime
-  log_file_name = "Duplicate_File %s.log"%timestamp()
-  log_file_name = log_file_name.replace(" ", "_")
-  log_file_name = log_file_name.replace(":", "_")
-   
-
-  if not os.path.exists(directory_path):
-    print("Disk Sanitizer Error: There is no such directory with name: ",directory_path)
-    return
-
-  if not os.path.isdir(directory_path):
-    print("Disk Sanitizer error: It is not a directory with name: ",directory_path)
-    return
-
-  with open(log_file_name, "a") as lfobj:
-
-    total_files = 0
-    duplicate_files = 0
-    size_dict = {}
-    for folder_name, sub_folder, file_name in os.walk(directory_path):
-        
-      for fname in file_name:
-        total_files += 1
-
-        fname = os.path.join(folder_name,fname)
-        fsize = os.path.getsize(fname)
-        if fsize not in size_dict:
-        
-          size_dict[fsize] = [fname]
-        else:
-          size_dict[fsize].append(fname)
-
-    
-    for size in size_dict:
-
-      if len(size_dict[size]) > 1:
-        checksum_dict = {}
-
-        for filename in size_dict[size]:
-          
-          try:
-            checksum = calculate_checksum(filename)
-          except Exception as e:
-            print(f"Unable to calculate checksum for {filename} : {e} ")
-            continue
-
-          if checksum not in checksum_dict:
-            checksum_dict[checksum] = filename
-          else:
-            try:
-              os.remove(filename)
-              print("Duplicate file deleted:", filename)
-              duplicate_files += 1
-            except Exception as e:
-              print(f"Failed to delete duplicate file: {filename} : {e}  ")
-
-
-
-    lfobj.write("\n" +border + "\n")
-    lfobj.write("Total files scanned: " + str(total_files) + "\n")
-    lfobj.write("Total duplicate files found and deleted: "+str(duplicate_files)+"\n")
-    lfobj.write(border + "\n")
-
-
+    print("Usage:")
+    print("python duplicate_file_removal.py <AbsoluteDirectoryPath> <TimeIntervalInMinutes> <ReceiverEmailAddress>")
 
 
 #############################################################################################
 #
-#     Function name: main
-#     Input: Command line Arguments
-#     Description: It controls the script 
-#     Date: 21/07/2026
-#     Author: Yash Sachin Satarkar
+# Function Name : perform_duplicate_removal
+# Description   : Scans the directory, removes duplicate files,
+#                 generates a log file and emails the report.
+#
+#############################################################################################
+
+def perform_duplicate_removal(directory_path, receiver):
+
+    border = "-" * 65
+
+    # ------------------------------------------------------------------
+    # Create Log File
+    # ------------------------------------------------------------------
+
+    logger.create_log_directory()
+    log_path = logger.create_log_file()
+
+    # ------------------------------------------------------------------
+    # Scan Directory
+    # ------------------------------------------------------------------
+
+    start_time = time.ctime()
+
+    try:
+
+        file_list = file_utils.get_all_files(directory_path)
+
+        checksum_dict = file_utils.find_duplicates(file_list)
+
+        delete_count, deleted_files = file_utils.delete_duplicates(checksum_dict)
+
+    except Exception as e:
+
+        logger.write_log(log_path, f"Unexpected Error occurred : {e}")
+        return
+
+    end_time = time.ctime()
+
+    # ------------------------------------------------------------------
+    # Calculate Statistics
+    # ------------------------------------------------------------------
+
+    total_files = len(file_list)
+
+    duplicate_count = 0
+
+    for files in checksum_dict.values():
+
+        if len(files) > 1:
+            duplicate_count += len(files) - 1
+
+    # ------------------------------------------------------------------
+    # Write Log
+    # ------------------------------------------------------------------
+
+    logger.write_log(log_path, f"Log Generated At : {start_time}")
+    logger.write_log(log_path, border)
+    logger.write_log(log_path, "")
+    logger.write_log(log_path, border)
+    logger.write_log(log_path, "              Disk Sanitizer Script              ")
+    logger.write_log(log_path, border)
+    logger.write_log(log_path, "")
+
+    logger.write_log(log_path, f"Directory Scanned : {directory_path}")
+    logger.write_log(log_path, f"Receiver Email : {receiver}")
+    logger.write_log(log_path, f"Scanning Started : {start_time}")
+    logger.write_log(log_path, f"Scanning Completed : {end_time}")
+
+    logger.write_log(log_path, border)
+
+    logger.write_log(log_path, f"Total Files Scanned : {total_files}")
+    logger.write_log(log_path, f"Duplicate Files Found : {duplicate_count}")
+    logger.write_log(log_path, f"Duplicate Files Deleted : {delete_count}")
+
+    logger.write_log(log_path, border)
+    logger.write_log(log_path, "Duplicate Checksums")
+
+    for checksum, files in checksum_dict.items():
+
+        if len(files) > 1:
+
+            logger.write_log(log_path, border)
+            logger.write_log(log_path, f"Checksum : {checksum}")
+
+            for file_path in files:
+                logger.write_log(log_path, file_path)
+
+    logger.write_log(log_path, border)
+    logger.write_log(log_path, "Deleted Files :")
+
+    for file_path in deleted_files:
+        logger.write_log(log_path, file_path)
+
+    logger.write_log(log_path, border)
+
+    # ------------------------------------------------------------------
+    # Prepare Email Body
+    # ------------------------------------------------------------------
+
+    body = f"""
+Hello,
+
+The duplicate-file removal operation has been completed successfully.
+
+Operation Statistics
+
+Starting time of scanning : {start_time}
+
+Completion time of scanning : {end_time}
+
+Directory scanned : {directory_path}
+
+Total files scanned : {total_files}
+
+Total duplicate files found : {duplicate_count}
+
+Total duplicate files deleted : {delete_count}
+
+Please find the detailed log file attached.
+
+Regards,
+
+Disk Sanitizer
+"""
+
+    # ------------------------------------------------------------------
+    # Send Email
+    # ------------------------------------------------------------------
+
+    status = mail_sender.send_mail(receiver, log_path, body)
+
+    if status:
+        logger.write_log(log_path, "Email Status : SUCCESS")
+    else:
+        logger.write_log(log_path, "Email Status : FAILED")
+
+    logger.write_log(log_path, border)
+
+
+#############################################################################################
+#
+# Function Name : main
+# Description   : Entry point of the application.
 #
 #############################################################################################
 
 def main():
 
-  border = "-"*40
-  print(border)
-  print("Disk Sanitizer Script")
-  print(border)
+    border = "-" * 65
 
-  if len(sys.argv) == 2:
-    if sys.argv[1] == "--h" or sys.argv[1] == "--H":
-       print("This automation script is used to scan the directory and delete empty or duplicate files ")
-       print("For better usage please check --u flag")
+    print(border)
+    print("              Disk Sanitizer Script")
+    print(border)
 
-    elif sys.argv[1] == "--u" or sys.argv[1] == "--U":
-       print("Please execute the script as: ")
-       print("python file_name.py directory_name")
-       print("Directory name should be absolute path")
+    # ------------------------------------------------------------------
+    # Display Help / Usage
+    # ------------------------------------------------------------------
 
-    else:
-      empty_files_scanner(sys.argv[1])
-      duplicate_files_scanner(sys.argv[1])
-  else:
-    print("invalid no of arguments only two are required")
-    print("please use --h or --u for more information")
-  
-  print(border)
-  print(" Thank You for using Disk Sanitizer")
-  print(border)
+    if len(sys.argv) == 2:
+
+        if sys.argv[1] in ("--h", "--help"):
+            display_help()
+            sys.exit()
+
+        elif sys.argv[1] in ("--u", "--usage"):
+            display_usage()
+            sys.exit()
+
+        else:
+            print("Invalid option.")
+            print("Use --help or --h for more information.")
+            sys.exit()
+
+    # ------------------------------------------------------------------
+    # Validate Command-Line Arguments
+    # ------------------------------------------------------------------
+
+    if len(sys.argv) != 4:
+
+        print("Invalid number of arguments.")
+        print("Use --help for more information.")
+        sys.exit()
+
+    directory_path = sys.argv[1]
+    interval = sys.argv[2]
+    receiver = sys.argv[3]
+
+    if not validator.validate_directory(directory_path):
+
+        print("Invalid Directory")
+        sys.exit()
+
+    if not validator.validate_interval(interval):
+
+        print("Invalid Time Interval")
+        sys.exit()
+
+    if not validator.validate_email(receiver):
+
+        print("Invalid Email Address")
+        sys.exit()
+
+    # ------------------------------------------------------------------
+    # Schedule Duplicate Removal
+    # ------------------------------------------------------------------
+
+    schedule.every(int(interval)).minutes.do(
+        perform_duplicate_removal,
+        directory_path,
+        receiver
+    )
+
+    print("Script Started")
+    print("Press Ctrl + C to Terminate Script")
+
+    while True:
+
+        schedule.run_pending()
+        time.sleep(1)
 
 
 #############################################################################################
 #
-#     Starter of Automation Script 
+# Starter of Automation Script
 #
 #############################################################################################
 

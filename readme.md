@@ -1,32 +1,36 @@
+# 🧹 Disk Sanitizer
+
 ![Python](https://img.shields.io/badge/Python-3.8+-blue)
 ![License](https://img.shields.io/badge/License-MIT-green)
 
-# 🧹 Disk Sanitizer
-
-A Python utility that scans directories to automatically remove **empty files** and **duplicate files** while generating detailed log files. The project also includes a scheduled version that can periodically scan a directory without user intervention.
+A Python-based automation utility that recursively scans directories to detect and remove **duplicate files** using **MD5 checksums**. The application generates detailed log files and automatically emails the execution report to the specified recipient. A scheduled version is also included to periodically monitor directories without user intervention.
 
 ---
 
-## ✨ Features
+# ✨ Features
 
 * 🗂️ Recursively scans directories and subdirectories
-* 🗑️ Detects and deletes empty files
-* 📄 Detects and removes duplicate files
-* 🔐 Uses **MD5 checksums** for duplicate detection
-* ⚡ Optimized using **file-size grouping** to reduce unnecessary checksum calculations
-* 📝 Generates log files for every scan
-* ⏱️ Includes both **one-time** and **scheduled** scanning versions
-* 🛡️ Handles common file operation errors using exception handling
+* 📄 Detects duplicate files using **MD5 checksums**
+* ⚡ Uses **file-size grouping optimization** to minimize checksum calculations
+* 🗑️ Deletes duplicate files automatically while preserving one original copy
+* 📝 Generates detailed log files containing scan statistics
+* 📧 Sends the generated log file through email
+* ⏱️ Includes a scheduled version for automatic periodic execution
+* 🛡️ Handles common file operation and email exceptions gracefully
+* 🧩 Modular architecture for better maintainability
 
 ---
 
-## 📂 Project Structure
+# 📂 Project Structure
 
 ```text
 Disk-Sanitizer/
 │
-├── disk_sanitizer.py              # One-time directory scan
-├── disk_sanitizer_scheduler.py    # Scheduled directory scan
+├── duplicate_file_removal.py      # Main controller
+├── validator.py                   # Input validation
+├── file_utils.py                  # File scanning & duplicate detection
+├── logger.py                      # Log file creation and writing
+├── mail_sender.py                 # Email sender module
 ├── requirements.txt
 ├── README.md
 ├── LICENSE
@@ -35,36 +39,55 @@ Disk-Sanitizer/
 
 ---
 
-## 🧠 How It Works
+# 🏗️ Project Architecture
 
-### Empty File Detection
+The project follows a modular design where each module performs a specific responsibility.
 
-1. Traverse the directory recursively.
-2. Check the size of every file.
-3. Delete files whose size is **0 bytes**.
-4. Record the operation in a log file.
+| Module                      | Responsibility                                                            |
+| --------------------------- | ------------------------------------------------------------------------- |
+| `duplicate_file_removal.py` | Controls the complete execution flow                                      |
+| `validator.py`              | Validates directory path, email address and time interval                 |
+| `file_utils.py`             | Performs recursive scanning, checksum calculation and duplicate detection |
+| `logger.py`                 | Creates log files and writes execution details                            |
+| `mail_sender.py`            | Sends the generated log file as an email attachment                       |
 
 ---
 
-### Duplicate File Detection
+# 🧠 Algorithm
 
-To improve performance, the program does **not** calculate checksums for every file.
+## Duplicate File Detection
 
-Instead, it uses the following optimization:
+To improve performance, the application **does not calculate checksums for every file**.
 
-1. Traverse the directory recursively.
+Instead, it follows the steps below:
+
+1. Recursively scan the specified directory.
 2. Group files according to their file size.
 3. Ignore groups containing only one file.
-4. Calculate the MD5 checksum only for files having identical sizes.
-5. Compare the checksums.
-6. Delete duplicate files.
-7. Generate a summary log.
+4. Compute MD5 checksums only for files having identical sizes.
+5. Compare the generated checksums.
+6. Delete duplicate copies while preserving one original.
+7. Generate a detailed log file.
+8. Email the log file to the specified recipient.
 
-This optimization significantly reduces the number of checksum calculations for directories containing many files.
+This optimization significantly reduces unnecessary checksum calculations, especially for directories containing a large number of files.
 
 ---
 
-## ⚙️ Requirements
+# 🔄 Workflow
+
+1. Validate user inputs.
+2. Scan the directory recursively.
+3. Calculate MD5 checksums.
+4. Detect duplicate files.
+5. Delete duplicate copies.
+6. Generate a detailed log file.
+7. Email the log file.
+8. Wait for the next scheduled execution (scheduled version only).
+
+---
+
+# ⚙️ Requirements
 
 * Python 3.8 or later
 
@@ -74,7 +97,7 @@ Install the required dependency:
 pip install -r requirements.txt
 ```
 
-or manually:
+or install manually:
 
 ```bash
 pip install schedule
@@ -82,87 +105,107 @@ pip install schedule
 
 ---
 
-## 🚀 Usage
+# 🚀 Usage
 
-### One-Time Scan
+## Scheduled Version
 
 ```bash
-python disk_sanitizer.py "C:\Path\To\Directory"
+python duplicate_file_removal.py <AbsoluteDirectoryPath> <TimeIntervalInMinutes> <ReceiverEmailAddress>
 ```
+
+### Example
+
+```bash
+python duplicate_file_removal.py "C:\Users\Yash\Downloads" 30 example@gmail.com
+```
+
+The script scans the specified directory every **30 minutes**, removes duplicate files, generates a log file and emails the report.
 
 ---
 
-### Scheduled Scan
-
-```bash
-python disk_sanitizer_scheduler.py "C:\Path\To\Directory"
-```
-
-The scheduled version scans the specified directory periodically until the program is stopped.
-
----
-
-## 📋 Sample Output
+# 📋 Sample Output
 
 ```text
-----------------------------------------
+-----------------------------------------------------------------
+
 Disk Sanitizer Script
-----------------------------------------
 
-Empty file deleted:
-C:\Downloads\empty.txt
+-----------------------------------------------------------------
 
-Duplicate file deleted:
-C:\Downloads\copy.pdf
+Script Started
 
-----------------------------------------
-Thank You for using Disk Sanitizer
-----------------------------------------
+Press Ctrl + C to Terminate Script
+
 ```
 
 ---
 
-## 📑 Log Files
+# 📑 Log File
 
-After every execution, log files are generated containing:
+The generated log contains:
 
+* Scan start time
+* Scan completion time
+* Directory scanned
 * Total files scanned
-* Number of empty files deleted
-* Number of duplicate files deleted
+* Duplicate files found
+* Duplicate files deleted
+* Duplicate file checksums
+* Deleted file list
+* Email delivery status
 
 Example:
 
 ```text
-Empty_File_2026-07-21_18-45-22.log
-Duplicate_File_2026-07-21_18-45-22.log
+DuplicateFileLog_24_07_2026_19_25_30.log
 ```
 
 ---
 
-## 🛠️ Technologies Used
+# 📸 Screenshots
 
-* Python
+### Command Prompt
+
+![Command Prompt](screenshots/command_prompt.png)
+
+### Duplicate File Log
+
+![Duplicate File Log](screenshots/duplicate_file_log.png)
+
+### Email Automation
+
+![Email Automation](screenshots/email_automation.png)
+
+---
+
+# 🛠️ Technologies Used
+
+* Python 3
 * os
 * hashlib
+* smtplib
+* email
 * schedule
+* datetime
 * sys
 * time
 
 ---
 
-## 💡 Future Improvements
+# 💡 Future Improvements
 
 * GUI version using Tkinter or PyQt
 * SHA-256 checksum option
-* Multi-threaded file scanning
-* Ignore selected directories
-* CSV/JSON log export
-* Progress bar for large directories
-* File recovery (Recycle Bin support)
+* Multi-threaded checksum calculation
+* Configuration file support
+* CSV / JSON log export
+* Real-time directory monitoring
+* Recycle Bin support instead of permanent deletion
+* Ignore selected directories and file types
 
 ---
 
-## 👨‍💻 Author
+# 👨‍💻 Author
 
 **Yash Sachin Satarkar**
 
@@ -170,6 +213,6 @@ Computer Engineering Student
 
 ---
 
-## 📄 License
+# 📄 License
 
-This project is licensed under the MIT License.
+This project is licensed under the **MIT License**.
