@@ -12,9 +12,9 @@ def send_mail(receiver, log_path, body):
 
     mail = EmailMessage()
 
-    mail["From"] = "yashsatarkar64@gmail.com"
+    mail["From"] = "your_email"
     mail["To"] = receiver
-    mail["Subject"] = "Testing Disk Sanitizer"
+    mail["Subject"] = "your_subject"
 
     mail.set_content(body)
 
@@ -42,7 +42,7 @@ def send_mail(receiver, log_path, body):
         # 4. Use the generated 16-character password below.
         # ------------------------------------------------------------------
 
-        server.login("yashsatarkar64@gmail.com", "nqyl uhfa bkpx wref")
+        server.login("your_gmail", "app_password")
 
         # ------------------------------------------------------------------
         # Read and attach the log file.
